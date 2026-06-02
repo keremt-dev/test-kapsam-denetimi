@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KS kapsam denetimi sonucu",
+  "type": "object",
+  "required": ["ks", "ks_adi", "maddeler", "etiketsiz_testler", "artik_testler", "test_notlari", "ozet"],
+  "properties": {
+    "ks": {"type": "string", "description": "KS kısa kodu, örn. KS_001"},
+    "ks_adi": {"type": "string"},
+    "maddeler": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tur", "no", "ozet", "karsilayan_testler", "durum", "not"],
+        "properties": {
+          "tur": {"enum": ["Ana Akış", "Alternatif", "İş Kuralı", "SRS Gereksinimi", "Ön/Son Koşul"]},
+          "no": {"type": "string", "description": "A1 / ALT1 / IK1 / OK1 / SK1 / SRS-014 vb."},
+          "ozet": {"type": "string"},
+          "karsilayan_testler": {"type": "array", "items": {"type": "string"}},
+          "durum": {"enum": ["Tam", "Kısmi", "Yok"]},
+          "not": {"type": "string"}
+        }
+      }
+    },
+    "etiketsiz_testler": {
+      "type": "array",
+      "items": {"type": "object", "required": ["test_id", "ad"],
+                "properties": {"test_id": {"type": "string"}, "ad": {"type": "string"}}}
+    },
+    "artik_testler": {
+      "type": "array",
+      "items": {"type": "object", "required": ["test_id", "ad", "not"],
+                "properties": {"test_id": {"type": "string"}, "ad": {"type": "string"}, "not": {"type": "string"}}}
+    },
+    "test_notlari": {
+      "type": "array",
+      "description": "Sayfadaki HER test ID için tam bir kayıt (tersine izlenebilirlik).",
+      "items": {"type": "object", "required": ["test_id", "karsiladigi", "yeterlilik", "yorum"],
+                "properties": {"test_id": {"type": "string"},
+                               "karsiladigi": {"type": "string", "description": "Madde no'ları, örn. 'A6, SRS-014'"},
+                               "yeterlilik": {"enum": ["Yeterli", "Eksik kapsam", "Maddeye bağlanmıyor"]},
+                               "yorum": {"type": "string"}}}
+    },
+    "ozet": {
+      "type": "object",
+      "required": ["tam", "kısmi", "yok", "toplam_madde"],
+      "properties": {"tam": {"type": "integer"}, "kısmi": {"type": "integer"},
+                     "yok": {"type": "integer"}, "toplam_madde": {"type": "integer"}}
+    }
+  }
+}

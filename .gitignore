@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+work/
+testrun_work/
+testrun_out/
+*.tmp
+~$*
