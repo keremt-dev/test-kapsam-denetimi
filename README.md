@@ -1,6 +1,6 @@
 # test-kapsam-denetimi
 
-Test senaryolarının kullanım senaryolarını ne kadar karşıladığını **madde madde** denetleyen ve kapsam boşluğu raporu üreten bir [Claude Code skill](https://docs.claude.com/en/docs/claude-code/skills)'i. TCDD BVA (BVAKP) modülleri (KEY, AT, …) için tasarlandı; aynı doküman şablonunu kullanan her modüle uygulanabilir.
+Test senaryolarının kullanım senaryolarını ne kadar karşıladığını **madde madde** denetleyen ve kapsam boşluğu raporu üreten bir [Claude Code skill](https://docs.claude.com/en/docs/claude-code/skills)'i. BVA (BVAKP) modülleri (KEY, AT, …) için tasarlandı; aynı doküman şablonunu kullanan her modüle uygulanabilir.
 
 ## Ne yapar?
 
