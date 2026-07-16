@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-test-kapsam-denetimi · Faz 0: Çıkarım
+test-kapsam-denetimi · Adım 1: Çıkarım
 3 kaynak dokümandan (SRS .xlsx, kullanım senaryoları .docx, test senaryoları .xlsx)
 her kullanım senaryosu için kendine-yeten bir girdi paketi (<KS>_input.md) ve
 bir manifest.json üretir.
@@ -76,10 +76,11 @@ def classify(indir):
             except Exception:
                 continue
             # SRS: 'Gereksinim Numarası' başlığı var mı
+            # (read-only kipte max_row/max_column None olabilir; iter_rows kullan)
             is_srs = False
             ws0 = wb[wb.sheetnames[0]]
-            for r in range(1, min(ws0.max_row, 6) + 1):
-                row = {norm(ws0.cell(r, c).value) for c in range(1, min(ws0.max_column, 30) + 1)}
+            for row_cells in ws0.iter_rows(min_row=1, max_row=6):
+                row = {norm(c.value) for c in row_cells[:30]}
                 if norm('Gereksinim Numarası') in row:
                     is_srs = True
                     break
@@ -88,6 +89,11 @@ def classify(indir):
             else:
                 tests_cands.append(f)
             wb.close()
+    if len(tests_cands) > 1:
+        print("UYARI: birden çok test dosyası adayı var, ilki seçildi:", file=sys.stderr)
+        for c in tests_cands:
+            print(f"  - {os.path.basename(c)}", file=sys.stderr)
+        print("  (farklısı gerekiyorsa --tests ile açıkça belirtin)", file=sys.stderr)
     tests_f = tests_cands[0] if tests_cands else None
     return reqs_f, docx_f, tests_f
 
@@ -278,6 +284,10 @@ def main():
     for uc in ucs:
         ks = ks_short(uc['no'])
         reqs = [x.strip() for x in uc['gereksinim'].split('\n') if x.strip().upper().startswith('SRS')]
+        for rq in reqs:
+            if rq not in srs:
+                print(f"UYARI: {ks} '{rq}' gereksinimi SRS dosyasında bulunamadı "
+                      f"(docx'te var, xlsx'te yok).", file=sys.stderr)
         sn = match_sheet(ks, sheets)
         if not sn:
             print(f"UYARI: {ks} için test sayfası bulunamadı, atlanıyor.", file=sys.stderr)

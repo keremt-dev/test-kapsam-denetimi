@@ -46,16 +46,16 @@ Bir modülün üç kaynak dosyasını bir klasöre koyup skill'i tetikleyin. Man
 ```bash
 SKILL_DIR=~/.claude/skills/test-kapsam-denetimi
 
-# Faz 0 — çıkarım
+# Adım 1 — çıkarım
 python "$SKILL_DIR/scripts/extract_bundles.py" --indir . --outdir work
 
-# Faz 1 — her KS için paralel Opus 4.8 ajanı (Claude Code orkestre eder)
+# Adım 2 — her KS için paralel Opus 4.8 ajanı (Claude Code orkestre eder)
 #          work/<KS>_input.md oku → work/<KS>_result.json yaz
 
-# Faz 3 — sert doğrulama (PASS olmadan sentez yok)
+# Adım 3 — sert doğrulama (PASS olmadan sentez yok)
 python "$SKILL_DIR/scripts/verify.py" --workdir work
 
-# Faz 4 — sentez
+# Adım 4 — sentez
 python "$SKILL_DIR/scripts/synthesize.py" --workdir work --outdir .
 python "$SKILL_DIR/scripts/verify.py" --workdir work --post --outdir .
 ```
@@ -90,9 +90,9 @@ test-kapsam-denetimi/
 ├── SKILL.md
 ├── README.md
 ├── scripts/
-│   ├── extract_bundles.py   # Faz 0: kaynaklar → girdi paketleri + manifest
-│   ├── verify.py            # Faz 3: sert doğrulama (C1–C6, --post)
-│   └── synthesize.py        # Faz 4: rapor + matris + yorumlu kopya + jira
+│   ├── extract_bundles.py   # Adım 1: kaynaklar → girdi paketleri + manifest
+│   ├── verify.py            # Adım 3: sert doğrulama (C1–C6, --post)
+│   └── synthesize.py        # Adım 4: rapor + matris + yorumlu kopya + jira
 └── references/
     ├── agent_prompt_template.md
     └── result_schema.json

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-test-kapsam-denetimi · Faz 3: SERT DOĞRULAMA (sentezden önce kapı)
+test-kapsam-denetimi · Adım 3: SERT DOĞRULAMA (sentezden önce kapı)
 result JSON'larını + manifest'i okur, tutarlılık kontrolleri yapar.
 - C1 sayım bütünlüğü: ozet'i madde durumundan YENİDEN HESAPLAR ve dosyaya yazar
 - C2 uydurma yok: atıf yapılan her Test ID manifest'te var
@@ -31,8 +31,9 @@ def load(workdir):
     return man, results
 
 def srs_tail(s):
+    """SRS numarasının son sayısal kısmını sıfır dolgusuz döndür ('SRS-014' ve 'SRS-14' aynı)."""
     m = re.findall(r'\d+', s)
-    return m[-1] if m else s
+    return str(int(m[-1])) if m else s
 
 def verify(workdir):
     man, results = load(workdir)
@@ -106,6 +107,13 @@ def verify_post(workdir, outdir):
     fails = []
     total_madde = sum(len(d.get('maddeler', [])) for _, d in results.values())
     mod = man['module']
+    # 4 çıktının da varlığı
+    base = os.path.splitext(os.path.basename(man.get('tests_file', '')))[0]
+    expected = [f"{mod}_Kapsam_Bosluk_Raporu.md", f"{mod}_jira_yorumlari.md",
+                f"{base} - Inceleme.xlsx"]
+    for e in expected:
+        if not os.path.exists(os.path.join(outdir, e)):
+            fails.append(f"[POST] çıktı bulunamadı: {e}")
     mx = os.path.join(outdir, f"{mod}_Kapsam_Bosluk_Matrisi.xlsx")
     if not os.path.exists(mx):
         fails.append(f"[POST] matris bulunamadı: {mx}")

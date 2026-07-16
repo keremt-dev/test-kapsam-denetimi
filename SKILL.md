@@ -39,9 +39,9 @@ pip install openpyxl python-docx
 ## Scripts
 | Script | Amac |
 |--------|------|
-| `scripts/extract_bundles.py` | Faz 0 — 3 kaynaktan `work/<KS>_input.md` + `work/manifest.json` uretir (baslik-tabanli tespit) |
-| `scripts/verify.py` | Faz 3 — sert dogrulama (PASS/FAIL); ozet'i yeniden hesaplar; `--post` ile cikti kontrolu |
-| `scripts/synthesize.py` | Faz 4 — rapor.md + matris.xlsx + yorumlu kopya + jira.md (sayimlar madde durumundan) |
+| `scripts/extract_bundles.py` | Adim 1 — 3 kaynaktan `work/<KS>_input.md` + `work/manifest.json` uretir (baslik-tabanli tespit) |
+| `scripts/verify.py` | Adim 3 — sert dogrulama (PASS/FAIL); ozet'i yeniden hesaplar; `--post` ile cikti kontrolu |
+| `scripts/synthesize.py` | Adim 4 — rapor.md + matris.xlsx + yorumlu kopya + jira.md (sayimlar madde durumundan) |
 | `references/agent_prompt_template.md` | KS denetci ajan promptu |
 | `references/result_schema.json` | result.json semasi |
 
@@ -49,14 +49,14 @@ pip install openpyxl python-docx
 
 ## İŞ AKIŞI (sirayla uygula)
 
-### Faz 0 — Cikarim
+### Adim 1 — Cikarim
 Calisma dizinine gec (girdi dosyalarinin oldugu yer onerilir) ve calistir:
 ```bash
 PYTHONIOENCODING=utf-8 python "$SKILL_DIR/scripts/extract_bundles.py" --indir . --outdir work
 ```
 Bu, `work/` altinda her KS icin `<KS>_input.md` ve `manifest.json` uretir. Ciktidaki KS sayisi, modul kodu ve SRS sayisini kullaniciya bildir. (Dosyalari acikca belirtmek istersen `--reqs/--usecases/--tests` kullan.)
 
-### Faz 1 — Paralel denetim ajanlari (Opus 4.8)
+### Adim 2 — Paralel denetim ajanlari (Opus 4.8)
 `manifest.json`'daki HER kullanim senaryosu icin **tek bir mesajda, paralel** Agent cagrisi yap:
 - `subagent_type: "general-purpose"`
 - **`model: "opus"`** (Opus 4.8 — bu ZORUNLU; her KS ajani Opus 4.8 ile calismali)
@@ -64,14 +64,14 @@ Bu, `work/` altinda her KS icin `<KS>_input.md` ve `manifest.json` uretir. Cikti
 
 Her ajan kendi `work/<KS>_result.json` dosyasini yazar ve kisa ozet doner. KS'ler bagimsizdir; hepsini ayni anda baslat.
 
-### Faz 3 — SERT DOGRULAMA (sentezden ONCE kapi)
+### Adim 3 — SERT DOGRULAMA (sentezden ONCE kapi)
 ```bash
 PYTHONIOENCODING=utf-8 python "$SKILL_DIR/scripts/verify.py" --workdir work
 ```
 - C1 sayim butunlugu (ozet'i madde durumundan yeniden hesaplar/yazar) · C2 uydurma Test ID yok · C3 her test icin test_notu var · C4 KS SRS-boyutu == beklenen · C5 modul SRS butunlugu · C6 enum.
 - **PASS degilse sentez YAPMA.** FAIL'lerde: ilgili KS ajanini DUZELTILMIS yonergeyle yeniden calistir (orn. eksik SRS maddesi ekle, uydurma ID'yi kaldir), sonra `verify.py`'yi tekrar kosur. PASS olana dek tekrarla.
 
-### Faz 4 — Sentez (yalniz PASS sonrasi)
+### Adim 4 — Sentez (yalniz PASS sonrasi)
 ```bash
 PYTHONIOENCODING=utf-8 python "$SKILL_DIR/scripts/synthesize.py" --workdir work --outdir .
 ```

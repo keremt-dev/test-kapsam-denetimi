@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-test-kapsam-denetimi · Faz 4: Sentez (yalnız verify PASS sonrası)
+test-kapsam-denetimi · Adım 4: Sentez (yalnız verify PASS sonrası)
 result JSON'lar + manifest -> 4 çıktı. TÜM sayımlar madde durumundan hesaplanır.
   <MOD>_Kapsam_Bosluk_Raporu.md
   <MOD>_Kapsam_Bosluk_Matrisi.xlsx  (Matris / Ozet / Etiketsiz_Artik)
@@ -15,6 +15,13 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 TURORD = {'Ön/Son Koşul': 0, 'Ana Akış': 1, 'Alternatif': 2, 'İş Kuralı': 3, 'SRS Gereksinimi': 4}
+
+def natkey(s):
+    """Doğal sıralama anahtarı: A2 < A10."""
+    return [int(p) if p.isdigit() else p for p in re.split(r'(\d+)', str(s))]
+
+def madde_sort(maddeler):
+    return sorted(maddeler, key=lambda x: (TURORD.get(x['tur'], 9), natkey(x['no'])))
 
 def load(workdir):
     man = json.load(open(os.path.join(workdir, 'manifest.json'), encoding='utf-8'))
@@ -33,12 +40,16 @@ def counts(d):
 def sj(s):
     return ' '.join((s or '').split())
 
+def md(s):
+    """Markdown tablo hücresi: boşluk normalize + '|' kaçır."""
+    return sj(s).replace('|', '\\|')
+
 # ---------------- 1) MD RAPOR ----------------
 def build_report(man, data, order, outdir):
     mod = man['module']
+    n_tests = sum(len(uc.get('valid_test_ids', [])) for uc in man['use_cases'].values())
     L = [f"# {mod} Modülü — Test ↔ Kullanım Senaryosu Kapsam Boşluk Raporu\n",
-         f"**Kapsam:** {len(order)} kullanım senaryosu · "
-         f"{sum(len(data[k]['valid_test_ids']) if 'valid_test_ids' in data[k] else 0 for k in order) or sum(len(man['use_cases'][k]['valid_test_ids']) for k in order)} test senaryosu",
+         f"**Kapsam:** {len(order)} kullanım senaryosu · {n_tests} test senaryosu",
          "**Yöntem:** Her KS'nin ana akışı, alternatifleri, iş kuralları, ön/son koşulları ve ilgili SRS gereksinimleri "
          "atomik maddelere ayrılıp Tam/Kısmi/Yok olarak eşleştirildi. Her KS ayrı Opus 4.8 ajanı ile denetlendi.\n", "---\n"]
     tt = collections.Counter()
@@ -59,14 +70,14 @@ def build_report(man, data, order, outdir):
     for k in order:
         for m in data[k]['maddeler']:
             if m['durum'] == 'Yok':
-                L.append(f"| {k} | {m['tur']} | {m['no']} | {sj(m['ozet'])} | {sj(m.get('not',''))} |")
+                L.append(f"| {k} | {m['tur']} | {m['no']} | {md(m['ozet'])} | {md(m.get('not',''))} |")
     L.append("")
     L.append("## 3. Eksik Kapsam — Kısmen Test Edilen Maddeler\n")
     L.append("| KS | Tür | Madde | Özet | Karşılayan Test | Eksik Yön |"); L.append("|----|----|----|----|----|----|")
     for k in order:
         for m in data[k]['maddeler']:
             if m['durum'] == 'Kısmi':
-                L.append(f"| {k} | {m['tur']} | {m['no']} | {sj(m['ozet'])} | {', '.join(m.get('karsilayan_testler',[]))} | {sj(m.get('not',''))} |")
+                L.append(f"| {k} | {m['tur']} | {m['no']} | {md(m['ozet'])} | {', '.join(m.get('karsilayan_testler',[]))} | {md(m.get('not',''))} |")
     L.append("")
     L.append("## 4. Ters Yön Bulguları\n### 4.1. Gereksinim Etiketi Boş Testler\n")
     L.append("| KS | Test ID | Test Adı |"); L.append("|----|----|----|")
@@ -80,7 +91,7 @@ def build_report(man, data, order, outdir):
     if arows:
         L.append("| KS | Test ID | Başlık | Not |"); L.append("|----|----|----|----|")
         for k, t in arows:
-            L.append(f"| {k} | {t['test_id']} | {t.get('ad','')} | {sj(t.get('not',''))} |")
+            L.append(f"| {k} | {t['test_id']} | {md(t.get('ad',''))} | {md(t.get('not',''))} |")
     else:
         L.append("_Artık test bulunmadı._")
     L.append(f"\n_Toplam {len(arows)} artık/iskelet satır._\n\n---\n\n## 5. Kullanım Senaryosu Bazında Detay\n")
@@ -89,8 +100,8 @@ def build_report(man, data, order, outdir):
         L.append(f"### {k} — {data[k].get('ks_adi','')}\n")
         L.append(f"Madde: {tot} · Tam: {tam} · Kısmi: {kis} · Yok: {yok}\n")
         L.append("| Tür | No | Özet | Karşılayan Test | Durum | Not |"); L.append("|----|----|----|----|----|----|")
-        for m in sorted(data[k]['maddeler'], key=lambda x: (TURORD.get(x['tur'], 9), x['no'])):
-            L.append(f"| {m['tur']} | {m['no']} | {sj(m['ozet'])} | {', '.join(m.get('karsilayan_testler',[])) or '—'} | {m['durum']} | {sj(m.get('not',''))} |")
+        for m in madde_sort(data[k]['maddeler']):
+            L.append(f"| {m['tur']} | {m['no']} | {md(m['ozet'])} | {', '.join(m.get('karsilayan_testler',[])) or '—'} | {m['durum']} | {md(m.get('not',''))} |")
         L.append("")
     p = os.path.join(outdir, f"{mod}_Kapsam_Bosluk_Raporu.md")
     open(p, 'w', encoding='utf-8').write('\n'.join(L))
@@ -111,7 +122,7 @@ def build_matrix(man, data, order, outdir):
         ws.cell(1, c).fill = hf; ws.cell(1, c).font = hfont
     r = 2
     for k in order:
-        for m in sorted(data[k]['maddeler'], key=lambda x: (TURORD.get(x['tur'], 9), x['no'])):
+        for m in madde_sort(data[k]['maddeler']):
             ws.append([k, m['tur'], m['no'], sj(m['ozet']), ', '.join(m.get('karsilayan_testler', [])) or '—', m['durum'], sj(m.get('not', ''))])
             ws.cell(r, 6).fill = df.get(m['durum']); ws.cell(r, 6).font = Font(bold=True)
             for c in range(1, 8):
@@ -180,6 +191,8 @@ def build_annotated(man, data, order, outdir):
             if not tid:
                 continue
             tid = str(tid).strip()
+            if tid.lower() == 'id':  # tekrar eden başlık satırı — nota gerek yok
+                continue
             n = notemap.get(tid)
             cell = sh.cell(row, nc); cell.alignment = wrap
             if n:
