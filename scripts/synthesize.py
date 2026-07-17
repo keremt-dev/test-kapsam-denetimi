@@ -13,6 +13,7 @@ Kullanım: python synthesize.py --workdir work --outdir .
 import argparse, glob, json, os, re, shutil, collections
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 TURORD = {'Ön/Son Koşul': 0, 'Ana Akış': 1, 'Alternatif': 2, 'İş Kuralı': 3, 'SRS Gereksinimi': 4}
 
@@ -186,6 +187,9 @@ def build_annotated(man, data, order, outdir):
                 last = c
         nc = last + 1
         hc = sh.cell(1, nc); hc.value = 'Kapsam İnceleme Notu'; hc.fill = hf; hc.font = hfont
+        hc.alignment = wrap
+        # not kolonu okunur genişlikte olsun; dar kolon + wrap satırları aşırı uzatıyor
+        sh.column_dimensions[get_column_letter(nc)].width = 55
         for row in range(2, sh.max_row + 1):
             tid = sh.cell(row, 1).value
             if not tid:
