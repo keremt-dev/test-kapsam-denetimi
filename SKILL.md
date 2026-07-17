@@ -1,6 +1,6 @@
 ---
 name: test-kapsam-denetimi
-description: Test senaryolarinin kullanim senaryolarini ne kadar karsiladigini madde madde denetler ve kapsam boslugu raporu uretir. Uc kaynak dokumandan (SRS gereksinim .xlsx, kullanim senaryolari .docx, test senaryolari .xlsx) yola cikip her kullanim senaryosunu ayri bir paralel ajan (Opus 4.8) ile denetler; ana akis adimlari, alternatif senaryolar, is kurallari, on/son kosullar ve SRS gereksinimlerini Tam/Kismi/Yok olarak eslestirir. Cikti olarak kapsam boslugu raporu (.md), izlenebilirlik matrisi (.xlsx), yorumlu test kopyasi (.xlsx) ve KS bazinda Jira yorumlari (.md) uretir; sonunda sert bir dogrulama (test kontrol) yapisi calistirir. Tetikleyiciler - "test kapsam denetimi", "kapsam boslugu", "coverage gap", "test kullanim senaryosu kapsam", "test senaryolari yeterli mi", "use case test coverage", "BVAKP test kapsam", "test eksik bul", "kapsam matrisi".
+description: Test senaryolarinin kullanim senaryolarini ne kadar karsiladigini madde madde denetler ve kapsam boslugu raporu uretir. Uc kaynak dokumandan (SRS gereksinim .xlsx, kullanim senaryolari .docx, test senaryolari .xlsx) yola cikip her kullanim senaryosunu ayri bir paralel ajan (Opus 4.8) ile denetler; ana akis adimlari, alternatif senaryolar, is kurallari, on/son kosullar ve SRS gereksinimlerini Tam/Kismi/Yok olarak eslestirir. Cikti olarak kapsam boslugu raporu (.md), izlenebilirlik matrisi (.xlsx), yorumlu test kopyasi (.xlsx) ve KS bazinda Jira yorumlari (.md) uretir; sonunda sert bir dogrulama (test kontrol) yapisi calistirir. Istenirse bulunan bosluklari da kapatir - mevcut testi revize ederek veya dosya konvansiyonlarina uygun yeni test senaryosu ekleyerek (Adim 5). Tetikleyiciler - "test kapsam denetimi", "kapsam boslugu", "coverage gap", "test kullanim senaryosu kapsam", "test senaryolari yeterli mi", "use case test coverage", "BVAKP test kapsam", "test eksik bul", "kapsam matrisi", "bosluklari kapat", "eksik testleri ekle", "test senaryosu ekle/revize et".
 ---
 
 # test-kapsam-denetimi
@@ -81,6 +81,27 @@ Son olarak cikti kontrolu:
 ```bash
 PYTHONIOENCODING=utf-8 python "$SKILL_DIR/scripts/verify.py" --workdir work --post --outdir .
 ```
+
+### Adim 5 — Bosluk Kapatma (ISTEGE BAGLI; yalniz kullanici isterse)
+Kullanici "bosluklari kapat" / "eksik testleri ekle" derse, raporlanan Yok/Kismi maddeleri kapat — ama **ORIJINAL TEST DOSYASINA ASLA DOKUNMA**. Once orijinali ayni dizine versiyonu artirilmis bir kopya olarak cikar ve TUM ekleme/revizyonlari bu kopya uzerinde openpyxl ile yap:
+- Dosya adinda `vN` varsa `v(N+1)` yap: `"... v1.xlsx"` → `"... v2.xlsx"`. Versiyon eki yoksa ada `" v2"` ekle.
+- Hedef kopya onceki bir calismadan zaten varsa kullaniciya sor (uzerine yaz / bir sonraki versiyonu olustur); sessizce ezme.
+
+**Karar kurali — once revizyonu dusun, sonra yeni test:**
+- **REVIZE et** (yeni satir EKLEME): bosluk, mevcut bir testin eksik kalan bir dogrulama YONU ise — ayni akis, ayni aktor, ayni on kosulla calisan bir test zaten var, sadece On Kosul / Test Adimlari / Beklenen Sonuc metni boslugu acikca dogrulamiyor. Ornekler: log testinin beklenen sonucuna "baslangic ve bitis zamani" netlestirmesi eklemek; indirme testine "oturum acmadan" kosulunu eklemek; yayindan kaldirma testine "versiyon gecmisinin korundugu" dogrulamasini eklemek.
+- **YENI TEST ekle**: bosluk kendi on kosulu/akisi olan AYRI bir senaryo ise — negatif akis (bir islemin ENGELLENDIGININ dogrulanmasi), farkli aktor/arac gerektiren kontrol (orn. erisilebilirlik/WCAG taramasi), mevcut hicbir teste dogal olarak sigmayan yeni islem (orn. anonimlestirmenin geri dondurulemezligi).
+- Supheli durumda revizyonu tercih et: test sayisini sisirmek bakim maliyeti getirir; ama iki farkli akisi tek teste sikistirmak da izlenebilirligi bozar.
+
+**Dosya konvansiyonlari (yeni satir eklerken):**
+- ID sayfadaki son ID'den devam eder (`BVAKP-<MOD>-KSxxx-T00NN`).
+- Test Adim ID = sayfadaki SON SATIRIN adim ID'si + 1 (sayac SATIR bazlidir, test bazli degil — cok adimli testler birden fazla satir kaplar; ayni sebeple son dolu satiri ID kolonundan bul).
+- Modul, Oncelik, Analiz Dokuman Versiyonu, Kullanim Senaryo Numarasi degerlerini sayfadaki mevcut satirdan kopyala; hucre stillerini (font/fill/border/alignment/number_format) ust satirdan `copy()` ile kopyala.
+- **Gereksinim kolonuna ilgili SRS etiketini mutlaka yaz** (birden fazlaysa newline ile ayir) — mevcut testlerin cogunda bos olsa bile; yeni testler izlenebilir dogsun.
+- Metin uslubu dosyayla ayni: Ad "... Kontrolu", Aciklama "... dogrulanmasi test senaryosudur.", Beklenen Sonuc "... dogrulanir.".
+- **Provenans isareti:** Reporter'i BOS birak (orijinal yazara atfetme); Review Status kolonuna yeni testte `Oneri - kapsam denetimi`, revize edilen satirda `Revize - kapsam denetimi` yaz. Ekip onaylayinca isareti kaldirir.
+- Eklenen bir test sonradan silinirse kalan eklenen testlerin ID ve adim ID'lerini ardisik olacak sekilde yeniden numaralandir.
+
+**Kaydettikten sonra dogrula:** v2 dosyasini yeniden ac; sayfa basina benzersiz test sayisi, ID ardisikligi ve revize edilen hucre metinlerini kontrol et. (Benzersiz ID sayisi != satir sayisi olabilir — cok adimli testler normaldir.) Kullaniciya orijinalin dokunulmadan kaldigini, degisikliklerin v2 dosyasinda oldugunu ve rapor/matrisin hala eski (v1) durumu gosterdigini soyle. Denetim yeniden calistirilacaksa `extract_bundles.py`'ye test dosyasini `--tests "<v2 dosyasi>"` ile ACIKCA ver — dizinde artik iki test .xlsx'i oldugundan otomatik tespit yanlis dosyayi secebilir.
 
 ## Cikti dosyalari
 - `<MOD>_Kapsam_Bosluk_Raporu.md` — yonetici ozeti (KS tablosu, %), Yok maddeler, Kismiler, ters yon, KS detaylari.
